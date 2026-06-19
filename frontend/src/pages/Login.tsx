@@ -16,16 +16,17 @@ function Login() {
     }
 
     try {
-      const user = await api.post('/auth/login', { email, password })
+      const data = await api.post('/auth/login', { email, password })
 
-      if (!user) {
+      if (!data || !data.user) {
         setError('Invalid email or password')
         return
       }
 
-      localStorage.setItem('currentUser', JSON.stringify(user))
+      localStorage.setItem('currentUser', JSON.stringify(data.user))
+      localStorage.setItem('token', data.token)
 
-      if (user.role === 'RECRUITER') {
+      if (data.user.role === 'RECRUITER') {
         navigate('/dashboard/recruiter')
       } else {
         navigate('/dashboard/seeker')

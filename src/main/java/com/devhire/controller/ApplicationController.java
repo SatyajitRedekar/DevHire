@@ -3,6 +3,7 @@ package com.devhire.controller;
 import com.devhire.dto.ApplyRequest;
 import com.devhire.model.Application;
 import com.devhire.service.ApplicationService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,30 +19,56 @@ public class ApplicationController {
     private ApplicationService applicationService;
 
     @GetMapping("/seeker/{seekerId}")
-    public ResponseEntity<List<Application>> getSeekerApplications(@PathVariable Long seekerId) {
+    public ResponseEntity<?> getSeekerApplications(@PathVariable Long seekerId, HttpServletRequest httpRequest) {
+        Long tokenUserId = (Long) httpRequest.getAttribute("userId");
+        if (!seekerId.equals(tokenUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You can only view your own application history");
+        }
         return ResponseEntity.ok(applicationService.getApplicationsBySeekerId(seekerId));
     }
 
     @GetMapping("/recruiter/{recruiterId}")
-    public ResponseEntity<List<Application>> getRecruiterReceivedApplications(@PathVariable Long recruiterId) {
+    public ResponseEntity<?> getRecruiterReceivedApplications(@PathVariable Long recruiterId, HttpServletRequest httpRequest) {
+        Long tokenUserId = (Long) httpRequest.getAttribute("userId");
+        String role = (String) httpRequest.getAttribute("role");
+        
+        if (!"RECRUITER".equals(role) || !recruiterId.equals(tokenUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You can only view applications sent to your job postings");
+        }
         return ResponseEntity.ok(applicationService.getApplicationsByRecruiterId(recruiterId));
     }
 
     @GetMapping("/check")
-    public ResponseEntity<Boolean> checkApplicationStatus(
+    public ResponseEntity<?> checkApplicationStatus(
             @RequestParam("seekerId") Long seekerId,
-            @RequestParam("jobId") Long jobId) {
+            @RequestParam("jobId") Long jobId,
+            HttpServletRequest httpRequest) {
+        Long tokenUserId = (Long) httpRequest.getAttribute("userId");
+        if (!seekerId.equals(tokenUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+        }
         Optional<Application> app = applicationService.findBySeekerIdAndJobId(seekerId, jobId);
         return ResponseEntity.ok(app.isPresent());
     }
 
     @PostMapping
-    public ResponseEntity<?> apply(@RequestBody ApplyRequest request) {
+    public ResponseEntity<?> apply(@RequestBody ApplyRequest request, HttpServletRequest httpRequest) {
+        Long tokenUserId = (Long) httpRequest.getAttribute("userId");
+        String role = (String) httpRequest.getAttribute("role");
+
+        if (!"SEEKER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only job seekers are authorized to apply to jobs");
+        }
+
+        if (request.getJobId() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Job ID is required");
+        }
+
         try {
             Application application = applicationService.applyToJob(
-                    request.getUserId(),
+                    tokenUserId,
                     request.getJobId(),
-                    request.getCoverNote()
+                    request.getCoverNote() != null ? request.getCoverNote().trim() : ""
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(application);
         } catch (IllegalArgumentException ex) {

@@ -25,9 +25,10 @@ function Register() {
       // Register new user on Spring Boot backend
       const data = await api.post('/auth/register', { name, email, password, role })
 
-      localStorage.setItem('currentUser', JSON.stringify(data))
+      localStorage.setItem('currentUser', JSON.stringify(data.user))
+      localStorage.setItem('token', data.token)
 
-      if (data.role === 'RECRUITER') {
+      if (data.user.role === 'RECRUITER') {
         navigate('/dashboard/recruiter')
       } else {
         navigate('/dashboard/seeker')

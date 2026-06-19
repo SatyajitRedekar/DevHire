@@ -3,6 +3,7 @@ package com.devhire.controller;
 import com.devhire.dto.JobPostRequest;
 import com.devhire.model.Job;
 import com.devhire.service.JobService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,18 +35,40 @@ public class JobController {
     }
 
     @PostMapping
-    public ResponseEntity<?> postJob(@RequestBody JobPostRequest request) {
+    public ResponseEntity<?> postJob(@RequestBody JobPostRequest request, HttpServletRequest httpRequest) {
+        // 1. Role verification from JWT claims
+        String role = (String) httpRequest.getAttribute("role");
+        Long tokenUserId = (Long) httpRequest.getAttribute("userId");
+
+        if (!"RECRUITER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only recruiters are authorized to post jobs");
+        }
+
+        // 2. Validate inputs
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Job title is required");
+        }
+        if (request.getCompany() == null || request.getCompany().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Company name is required");
+        }
+        if (request.getLocation() == null || request.getLocation().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Job location is required");
+        }
+        if (request.getSkills() == null || request.getSkills().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("At least one key skill is required");
+        }
+
         try {
             Job job = new Job();
-            job.setTitle(request.getTitle());
-            job.setCompany(request.getCompany());
-            job.setLocation(request.getLocation());
-            job.setSalary(request.getSalary());
-            job.setExperience(request.getExperience());
+            job.setTitle(request.getTitle().trim());
+            job.setCompany(request.getCompany().trim());
+            job.setLocation(request.getLocation().trim());
+            job.setSalary(request.getSalary() != null ? request.getSalary().trim() : "Not Specified");
+            job.setExperience(request.getExperience() != null ? request.getExperience().trim() : "Not Specified");
             job.setSkills(request.getSkills());
-            job.setDescription(request.getDescription());
+            job.setDescription(request.getDescription() != null ? request.getDescription().trim() : "");
 
-            Job savedJob = jobService.createJob(job, request.getRecruiterId());
+            Job savedJob = jobService.createJob(job, tokenUserId);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedJob);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
