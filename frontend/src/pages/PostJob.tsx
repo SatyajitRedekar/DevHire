@@ -7,21 +7,35 @@ function PostJob() {
   const navigate = useNavigate()
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
 
-  useEffect(() => {
-    if (!currentUser || currentUser.role !== 'RECRUITER') {
-      navigate('/login')
-    }
-  }, [])
-
   const [formData, setFormData] = useState({
     title: '',
-    company: 'TechCorp', // Default mock company
+    company: '', // Start empty
     location: '',
     salary: '',
     experience: '',
     skills: '',
     description: ''
   })
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'RECRUITER') {
+      navigate('/login')
+      return
+    }
+
+    async function loadCompanyProfile() {
+      try {
+        const profData = await api.get(`/profiles/recruiter/${currentUser.id}`)
+        if (profData && profData.companyName) {
+          setFormData(prev => ({ ...prev, company: profData.companyName }))
+        }
+      } catch (err) {
+        console.error('Failed to load company profile for job post', err)
+      }
+    }
+    
+    loadCompanyProfile()
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
