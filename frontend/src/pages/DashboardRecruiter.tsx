@@ -145,7 +145,7 @@ function DashboardRecruiter() {
             { label: 'Active Jobs', value: analytics.totalJobs, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
             { label: 'Received Apps', value: analytics.totalApplicants, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
             { label: 'Shortlisted', value: analytics.statusBreakdown.SHORTLISTED || 0, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-            { label: 'Hired/Selected', value: analytics.statusBreakdown.SELECTED || 0, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+            { label: 'Hired/Selected', value: analytics.statusBreakdown.HIRED || 0, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
             { label: 'Rejected', value: analytics.statusBreakdown.REJECTED || 0, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
           ].map(stat => (
             <div key={stat.label} className={`rounded-2xl border p-5 text-center shadow-sm transition-transform hover:-translate-y-0.5 bg-white border-slate-100`}>
@@ -403,7 +403,7 @@ function DashboardRecruiter() {
                               Shortlist
                             </button>
                             <button
-                              onClick={() => handleUpdateStatus(app.id, 'SELECTED')}
+                              onClick={() => handleUpdateStatus(app.id, 'HIRED')}
                               className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xxs font-bold transition-colors shadow-sm"
                             >
                               Select / Hire
@@ -420,7 +420,7 @@ function DashboardRecruiter() {
                         {app.status === 'SHORTLISTED' && (
                           <div className="flex gap-2 border-t border-slate-100 pt-3">
                             <button
-                              onClick={() => handleUpdateStatus(app.id, 'SELECTED')}
+                              onClick={() => handleUpdateStatus(app.id, 'HIRED')}
                               className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xxs font-bold transition-colors shadow-sm"
                             >
                               Select / Hire
