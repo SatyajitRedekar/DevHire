@@ -102,6 +102,7 @@ function Register() {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Satyajit Redekar"
+                    autoComplete="off"
                     className="w-full pl-11 pr-4 py-3.5 bg-white/70 border border-slate-200/60 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-slate-800 placeholder-slate-400 shadow-sm"
                   />
                 </div>
@@ -118,6 +119,7 @@ function Register() {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
+                    autoComplete="off"
                     className="w-full pl-11 pr-4 py-3.5 bg-white/70 border border-slate-200/60 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-slate-800 placeholder-slate-400 shadow-sm"
                   />
                 </div>
@@ -134,6 +136,7 @@ function Register() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="At least 4 characters"
+                    autoComplete="new-password"
                     className="w-full pl-11 pr-4 py-3.5 bg-white/70 border border-slate-200/60 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-slate-800 placeholder-slate-400 shadow-sm"
                   />
                 </div>
