@@ -41,10 +41,22 @@ function PostJob() {
     e.preventDefault()
     
     try {
+      const formattedLocation = formData.location
+        .trim()
+        .split(',')
+        .map(segment => 
+          segment
+            .trim()
+            .split(/\s+/)
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ')
+        )
+        .join(', ')
+
       const newJob = {
         title: formData.title,
         company: formData.company,
-        location: formData.location,
+        location: formattedLocation,
         salary: formData.salary,
         experience: formData.experience,
         skills: formData.skills.split(',').map(s => s.trim()),

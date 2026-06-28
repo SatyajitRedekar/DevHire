@@ -25,7 +25,20 @@ function Jobs() {
     fetchJobs()
   }, [])
 
-  const locations = [...new Set(jobs.map(j => j.location))]
+  const locations = [...new Set(jobs.map(j => {
+    if (!j.location) return ''
+    return j.location
+      .trim()
+      .split(',')
+      .map((segment: string) => 
+        segment
+          .trim()
+          .split(/\s+/)
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ')
+      )
+      .join(', ')
+  }))].filter(Boolean)
   const skills = [...new Set(jobs.flatMap(j => j.skills))]
 
   const filtered = jobs.filter(job => {
