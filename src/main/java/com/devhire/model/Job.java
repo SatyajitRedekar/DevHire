@@ -18,7 +18,7 @@ public class Job {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "recruiter_id", nullable = false)
+    @JoinColumn(name = "recruiter_id", nullable = true)
     @JsonIgnore
     private User recruiter;
 
@@ -57,6 +57,12 @@ public class Job {
     @Enumerated(EnumType.STRING)
     @Column
     private JobStatus status = JobStatus.OPEN;
+
+    @Column(name = "is_external")
+    private Boolean isExternal = false;
+
+    @Column(name = "external_id", unique = true)
+    private String externalId;
 
     public Job() {
     }
@@ -191,5 +197,25 @@ public class Job {
         } else {
             this.skillsRequired = String.join(", ", skills);
         }
+    }
+
+    @JsonProperty("is_external")
+    public Boolean getIsExternal() {
+        return isExternal;
+    }
+
+    @JsonProperty("is_external")
+    public void setIsExternal(Boolean isExternal) {
+        this.isExternal = isExternal;
+    }
+
+    @JsonProperty("external_id")
+    public String getExternalId() {
+        return externalId;
+    }
+
+    @JsonProperty("external_id")
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 }

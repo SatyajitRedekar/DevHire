@@ -177,7 +177,7 @@ function Jobs() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-5">
-                  {paginated.map((job, index) => (
+                  {paginated.map((job) => (
                     <div
                       key={job.id}
                       className="group bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-6 md:p-8 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden"
@@ -206,7 +206,7 @@ function Jobs() {
                       <div className="flex flex-col md:flex-row md:items-end justify-between mt-6 gap-6">
                         <div className="flex-1">
                           <div className="flex flex-wrap gap-2">
-                            {job.skills.map(skill => (
+                            {job.skills.map((skill: string) => (
                               <span
                                 key={skill}
                                 className="px-3 py-1.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-xs font-bold tracking-wide"

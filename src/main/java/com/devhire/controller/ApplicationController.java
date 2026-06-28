@@ -1,6 +1,7 @@
 package com.devhire.controller;
 
 import com.devhire.dto.ApplyRequest;
+import com.devhire.dto.ApplicationResponse;
 import com.devhire.model.Application;
 import com.devhire.service.ApplicationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -24,7 +26,7 @@ public class ApplicationController {
         if (!seekerId.equals(tokenUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You can only view your own application history");
         }
-        return ResponseEntity.ok(applicationService.getApplicationsBySeekerId(seekerId));
+        return ResponseEntity.ok(applicationService.getDetailedApplicationsBySeekerId(seekerId));
     }
 
     @GetMapping("/recruiter/{recruiterId}")
@@ -35,7 +37,45 @@ public class ApplicationController {
         if (!"RECRUITER".equals(role) || !recruiterId.equals(tokenUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You can only view applications sent to your job postings");
         }
-        return ResponseEntity.ok(applicationService.getApplicationsByRecruiterId(recruiterId));
+        return ResponseEntity.ok(applicationService.getDetailedApplicationsByRecruiterId(recruiterId));
+    }
+
+    @GetMapping("/recruiter/{recruiterId}/analytics")
+    public ResponseEntity<?> getRecruiterAnalytics(@PathVariable Long recruiterId, HttpServletRequest httpRequest) {
+        Long tokenUserId = (Long) httpRequest.getAttribute("userId");
+        String role = (String) httpRequest.getAttribute("role");
+        
+        if (!"RECRUITER".equals(role) || !recruiterId.equals(tokenUserId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+        }
+        return ResponseEntity.ok(applicationService.getRecruiterAnalytics(recruiterId));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(
+            @PathVariable Long id, 
+            @RequestBody Map<String, String> body, 
+            HttpServletRequest httpRequest) {
+        Long tokenUserId = (Long) httpRequest.getAttribute("userId");
+        String role = (String) httpRequest.getAttribute("role");
+
+        if (!"RECRUITER".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Only recruiters can update application status");
+        }
+
+        String status = body.get("status");
+        if (status == null || status.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Status is required");
+        }
+
+        try {
+            ApplicationResponse response = applicationService.updateApplicationStatus(id, status);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update status: " + ex.getMessage());
+        }
     }
 
     @GetMapping("/check")

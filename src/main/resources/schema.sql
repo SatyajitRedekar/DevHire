@@ -37,7 +37,7 @@ CREATE TABLE seeker_profile (
 
 CREATE TABLE jobs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    recruiter_id BIGINT NOT NULL,
+    recruiter_id BIGINT NULL,
     company VARCHAR(150) NOT NULL,
     title VARCHAR(150) NOT NULL,
     description TEXT,
@@ -48,6 +48,8 @@ CREATE TABLE jobs (
     salary_range VARCHAR(50),
     posted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('OPEN','CLOSED') DEFAULT 'OPEN',
+    is_external BOOLEAN DEFAULT FALSE,
+    external_id VARCHAR(255) UNIQUE,
     FOREIGN KEY (recruiter_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -60,4 +62,13 @@ CREATE TABLE applications (
     cover_note TEXT,
     FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
     FOREIGN KEY (seeker_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    message VARCHAR(255) NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

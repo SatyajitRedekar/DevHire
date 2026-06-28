@@ -15,6 +15,9 @@ public class JwtFilter implements Filter {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @org.springframework.beans.factory.annotation.Value("${devhire.internal.api.key:devhire-super-secret-key-1234}")
+    private String internalApiKey;
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -40,7 +43,36 @@ public class JwtFilter implements Filter {
             return;
         }
 
-        // 3. Authenticate protected routes
+        // 3. Handle System Ingestion Route with Internal API Key
+        if ("/api/jobs/external".equals(path) && "POST".equalsIgnoreCase(method)) {
+            String apiKeyHeader = httpRequest.getHeader("Authorization");
+            if (apiKeyHeader == null) {
+                apiKeyHeader = httpRequest.getHeader("X-API-KEY");
+            }
+            
+            String tokenValue = null;
+            if (apiKeyHeader != null) {
+                if (apiKeyHeader.startsWith("Bearer ")) {
+                    tokenValue = apiKeyHeader.substring(7).trim();
+                } else {
+                    tokenValue = apiKeyHeader.trim();
+                }
+            }
+            
+            if (tokenValue != null && tokenValue.equals(internalApiKey)) {
+                httpRequest.setAttribute("userId", 0L);
+                httpRequest.setAttribute("role", "SYSTEM");
+                httpRequest.setAttribute("email", "system@devhire.com");
+                chain.doFilter(request, response);
+                return;
+            } else {
+                httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                httpResponse.getWriter().write("Invalid or missing internal API key");
+                return;
+            }
+        }
+
+        // 4. Authenticate protected routes
         String authHeader = httpRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

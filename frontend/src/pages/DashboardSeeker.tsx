@@ -8,6 +8,14 @@ function DashboardSeeker() {
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
 
   const [applications, setApplications] = useState<any[]>([])
+  const [profile, setProfile] = useState<any>({ headline: '', skills: '', experience_years: 0 })
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  
+  // Profile form state
+  const [formHeadline, setFormHeadline] = useState('')
+  const [formSkills, setFormSkills] = useState('')
+  const [formExp, setFormExp] = useState(0)
 
   useEffect(() => {
     if (!currentUser) {
@@ -15,19 +23,62 @@ function DashboardSeeker() {
       return
     }
     
-    async function fetchApps() {
-      try {
-        const data = await api.get(`/applications/seeker/${currentUser.id}`)
-        if (data) setApplications(data)
-      } catch (err) {
-        console.error('Failed to fetch applications', err)
-      }
-    }
-    fetchApps()
+    fetchDashboardData()
   }, [])
 
-  const statusCount = (status: string) =>
-    applications.filter(a => a.status === status).length
+  async function fetchDashboardData() {
+    try {
+      // 1. Fetch applications
+      const appData = await api.get(`/applications/seeker/${currentUser.id}`)
+      if (appData) setApplications(appData)
+
+      // 2. Fetch profile
+      const profData = await api.get(`/profiles/seeker/${currentUser.id}`)
+      if (profData) {
+        setProfile(profData)
+        setFormHeadline(profData.headline || '')
+        setFormSkills(profData.skills || '')
+        setFormExp(profData.experience_years || 0)
+      }
+
+      // 3. Fetch notifications
+      const notifData = await api.get(`/notifications/user/${currentUser.id}`)
+      if (notifData) setNotifications(notifData)
+    } catch (err) {
+      console.error('Failed to fetch seeker dashboard data', err)
+    }
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      const updated = await api.put(`/profiles/seeker/${currentUser.id}`, {
+        headline: formHeadline,
+        skills: formSkills,
+        experience_years: Number(formExp)
+      })
+      if (updated) {
+        setProfile(updated)
+        setIsEditingProfile(false)
+        fetchDashboardData() // Reload to recalculate match scores
+      }
+    } catch (err) {
+      console.error('Failed to save profile', err)
+      alert('Failed to save profile details')
+    }
+  }
+
+  async function handleMarkRead(id: number) {
+    try {
+      await api.put(`/notifications/${id}/read`, {})
+      setNotifications(prev =>
+        prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
+      )
+    } catch (err) {
+      console.error('Failed to mark notification as read', err)
+    }
+  }
+
 
   function badgeStyle(status: string) {
     const map: Record<string, string> = {
@@ -38,6 +89,13 @@ function DashboardSeeker() {
     }
     return map[status] || map['APPLIED']
   }
+
+  // Get active skills list
+  const skillsList = profile.skills
+    ? profile.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+    : []
+
+  const unreadNotifs = notifications.filter(n => !n.is_read)
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans relative overflow-hidden pb-20">
@@ -55,7 +113,7 @@ function DashboardSeeker() {
         <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold font-heading text-slate-900 tracking-tight">Candidate Dashboard</h1>
-            <p className="text-slate-500 font-medium mt-2">Manage your job applications and profile.</p>
+            <p className="text-slate-500 font-medium mt-2">Manage your job applications and professional profile.</p>
           </div>
           <button
             onClick={() => navigate('/jobs')}
@@ -68,10 +126,10 @@ function DashboardSeeker() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column (Profile & Stats) */}
+          {/* Left Column (Profile, Skills & Notifications) */}
           <div className="lg:col-span-1 flex flex-col gap-8">
             
-            {/* Profile Card */}
+            {/* User Account Card */}
             <div className="glass bg-white/70 rounded-[2rem] border border-white/60 p-8 shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
               <div className="flex flex-col items-center text-center">
@@ -89,24 +147,157 @@ function DashboardSeeker() {
               </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: 'Total Applied', value: applications.length, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-                { label: 'Shortlisted', value: statusCount('SHORTLISTED'), color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-                { label: 'Selected', value: statusCount('SELECTED'), color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-                { label: 'Rejected', value: statusCount('REJECTED'), color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
-              ].map(stat => (
-                <div key={stat.label} className={`rounded-3xl border p-6 text-center shadow-sm transition-transform hover:-translate-y-1 ${stat.bg} ${stat.border}`}>
-                  <p className={`text-4xl font-extrabold font-heading mb-1 ${stat.color}`}>{stat.value}</p>
-                  <p className={`text-xs font-bold uppercase tracking-wider ${stat.color} opacity-80`}>{stat.label}</p>
+            {/* Professional Profile & Skills Card */}
+            <div className="glass bg-white/70 rounded-[2rem] border border-white/60 p-8 shadow-xl">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold font-heading text-slate-900">Professional Profile</h3>
+                {!isEditingProfile && (
+                  <button
+                    onClick={() => setIsEditingProfile(true)}
+                    className="text-blue-600 font-bold hover:text-blue-700 text-sm transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {isEditingProfile ? (
+                <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Headline</label>
+                    <input
+                      type="text"
+                      value={formHeadline}
+                      onChange={e => setFormHeadline(e.target.value)}
+                      placeholder="e.g. Senior Java Developer"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Skills (comma-separated)</label>
+                    <input
+                      type="text"
+                      value={formSkills}
+                      onChange={e => setFormSkills(e.target.value)}
+                      placeholder="e.g. Java, React, SQL"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Experience (years)</label>
+                    <input
+                      type="number"
+                      value={formExp}
+                      onChange={e => setFormExp(Number(e.target.value))}
+                      min="0"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-sm transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingProfile(false)
+                        setFormHeadline(profile.headline || '')
+                        setFormSkills(profile.skills || '')
+                        setFormExp(profile.experience_years || 0)
+                      }}
+                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Headline</p>
+                    <p className="text-slate-800 font-semibold text-sm">{profile.headline || 'No headline set yet'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Experience</p>
+                    <p className="text-slate-800 font-semibold text-sm">
+                      {profile.experience_years ? `${profile.experience_years} Year(s)` : '0 Years'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Skills</p>
+                    {skillsList.length === 0 ? (
+                      <p className="text-slate-500 text-xs italic">Add skills to show match scores on applications</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {skillsList.map((skill: string) => (
+                          <span
+                            key={skill}
+                            className="px-2.5 py-1 bg-blue-50 border border-blue-100 text-blue-700 font-semibold text-xs rounded-lg"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
+              )}
+            </div>
+
+            {/* Notifications Card */}
+            <div className="glass bg-white/70 rounded-[2rem] border border-white/60 p-8 shadow-xl">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🔔</span>
+                  <h3 className="text-xl font-bold font-heading text-slate-900">Notifications</h3>
+                </div>
+                {unreadNotifs.length > 0 && (
+                  <span className="px-2 py-0.5 bg-rose-500 text-white font-bold text-xxs rounded-full animate-pulse">
+                    {unreadNotifs.length} New
+                  </span>
+                )}
+              </div>
+
+              {notifications.length === 0 ? (
+                <p className="text-slate-400 text-sm text-center py-6">No notifications yet.</p>
+              ) : (
+                <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
+                  {notifications.map(notif => (
+                    <div
+                      key={notif.id}
+                      className={`p-3.5 rounded-xl border text-xs leading-relaxed transition-all relative ${
+                        notif.is_read
+                          ? 'bg-slate-50/50 border-slate-100 text-slate-500'
+                          : 'bg-indigo-50/70 border-indigo-100/50 text-indigo-900 font-medium'
+                      }`}
+                    >
+                      <p>{notif.message}</p>
+                      <div className="flex justify-between items-center mt-2 text-xxs text-slate-400">
+                        <span>{new Date(notif.created_at || notif.createdAt).toLocaleDateString()}</span>
+                        {!notif.is_read && (
+                          <button
+                            onClick={() => handleMarkRead(notif.id)}
+                            className="text-indigo-600 font-bold hover:underline hover:text-indigo-800"
+                          >
+                            Mark Read
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
 
-          {/* Right Column (Applications Table) */}
+          {/* Right Column (Applications Table with Match Score!) */}
           <div className="lg:col-span-2">
             <div className="glass bg-white/70 rounded-[2rem] border border-white/60 p-2 md:p-8 shadow-xl h-full flex flex-col">
               <div className="p-4 md:p-0 mb-6 flex items-center gap-3">
@@ -134,23 +325,28 @@ function DashboardSeeker() {
                     <thead>
                       <tr>
                         <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/60">Role / Company</th>
-                        <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/60">Date Applied</th>
+                        <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/60 text-center">Skill Match</th>
                         <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/60 text-right">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {applications.map(app => {
-                        const job = app.job
                         return (
                           <tr key={app.id} className="hover:bg-white/50 transition-colors group cursor-pointer" onClick={() => navigate(`/jobs/${app.job_id || app.jobId}`)}>
                             <td className="px-6 py-5">
-                              <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{job?.title || 'Unknown Role'}</p>
-                              <p className="text-sm font-medium text-slate-500">{job?.company || '-'}</p>
+                              <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{app.job_title || 'Software Role'}</p>
+                              <p className="text-sm font-medium text-slate-500">Applied: {new Date(app.applied_date || app.appliedDate).toLocaleDateString()}</p>
                             </td>
-                            <td className="px-6 py-5">
-                              <p className="text-sm font-medium text-slate-600">
-                                {new Date(app.applied_date || app.appliedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                              </p>
+                            <td className="px-6 py-5 text-center">
+                              <span className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg border ${
+                                app.match_score >= 80 
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                  : app.match_score >= 50 
+                                    ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                                    : 'bg-rose-50 text-rose-700 border-rose-200'
+                              }`}>
+                                {app.match_score}%
+                              </span>
                             </td>
                             <td className="px-6 py-5 text-right">
                               <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold border shadow-sm ${badgeStyle(app.status)}`}>

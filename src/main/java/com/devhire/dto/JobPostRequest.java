@@ -81,4 +81,15 @@ public class JobPostRequest {
     public void setRecruiterId(Long recruiterId) {
         this.recruiterId = recruiterId;
     }
+
+    @JsonProperty("external_id")
+    private String externalId;
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
 }

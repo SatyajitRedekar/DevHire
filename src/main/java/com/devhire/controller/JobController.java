@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/jobs")
@@ -74,6 +75,48 @@ public class JobController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create job: " + ex.getMessage());
+        }
+    }
+
+    @PostMapping("/external")
+    public ResponseEntity<?> postExternalJob(@RequestBody JobPostRequest request, HttpServletRequest httpRequest) {
+        String role = (String) httpRequest.getAttribute("role");
+        if (!"SYSTEM".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: System role required");
+        }
+
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Job title is required");
+        }
+        if (request.getCompany() == null || request.getCompany().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Company name is required");
+        }
+        if (request.getExternalId() == null || request.getExternalId().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("External ID is required");
+        }
+
+        try {
+            Optional<Job> existing = jobService.findByExternalId(request.getExternalId().trim());
+            if (existing.isPresent()) {
+                return ResponseEntity.status(HttpStatus.OK).body(existing.get());
+            }
+
+            Job job = new Job();
+            job.setTitle(request.getTitle().trim());
+            job.setCompany(request.getCompany().trim());
+            job.setLocation(request.getLocation() != null ? request.getLocation().trim() : "India");
+            job.setSalary(request.getSalary() != null ? request.getSalary().trim() : "Not Specified");
+            job.setExperience(request.getExperience() != null ? request.getExperience().trim() : "Not Specified");
+            job.setSkills(request.getSkills());
+            job.setDescription(request.getDescription() != null ? request.getDescription().trim() : "");
+            job.setExternalId(request.getExternalId().trim());
+            
+            Job savedJob = jobService.createExternalJob(job);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedJob);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save external job: " + ex.getMessage());
         }
     }
 }

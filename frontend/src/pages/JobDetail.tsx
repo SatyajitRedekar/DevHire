@@ -158,7 +158,7 @@ function JobDetail() {
                 Required Skills
               </h2>
               <div className="flex flex-wrap gap-3">
-                {job.skills.map(skill => (
+                {job.skills.map((skill: string) => (
                   <span
                     key={skill}
                     className="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl font-bold text-sm shadow-sm"
@@ -172,7 +172,7 @@ function JobDetail() {
             <div className="mb-10">
               <h3 className="text-xl font-bold font-heading text-slate-900 mb-4">What you'll need</h3>
               <ul className="space-y-3">
-                {job.skills.map(skill => (
+                {job.skills.map((skill: string) => (
                   <li key={skill} className="flex items-start">
                     <svg className="w-6 h-6 text-emerald-500 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                     <span className="text-slate-600 text-lg">Strong professional experience with <strong className="text-slate-800">{skill}</strong> in production environments.</span>
