@@ -27,6 +27,7 @@ public class ApplicationResponse {
     private String status;
 
     @JsonProperty("applied_date")
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime appliedDate;
 
     private String headline;
@@ -143,5 +144,27 @@ public class ApplicationResponse {
 
     public void setMatchScore(int matchScore) {
         this.matchScore = matchScore;
+    }
+
+    @JsonProperty("matched_skills")
+    private String matchedSkills;
+
+    @JsonProperty("missing_skills")
+    private String missingSkills;
+
+    public String getMatchedSkills() {
+        return matchedSkills;
+    }
+
+    public void setMatchedSkills(String matchedSkills) {
+        this.matchedSkills = matchedSkills;
+    }
+
+    public String getMissingSkills() {
+        return missingSkills;
+    }
+
+    public void setMissingSkills(String missingSkills) {
+        this.missingSkills = missingSkills;
     }
 }

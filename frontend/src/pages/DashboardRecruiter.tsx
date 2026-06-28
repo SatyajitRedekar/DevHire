@@ -356,9 +356,15 @@ function DashboardRecruiter() {
 
                         {/* Experience & Skills */}
                         <div className="flex flex-col gap-2">
-                          <p className="text-xxs font-bold text-slate-400 uppercase">
-                            Experience: <span className="text-slate-700 lowercase">{app.experience_years ? `${app.experience_years} year(s)` : '0 years'}</span>
-                          </p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xxs font-bold text-slate-400 uppercase">
+                            <span>Experience: <span className="text-slate-700 lowercase">{app.experience_years ? `${app.experience_years} year(s)` : '0 years'}</span></span>
+                            {app.matched_skills && (
+                              <span>Matched: <span className="text-emerald-600 font-semibold normal-case">{app.matched_skills}</span></span>
+                            )}
+                            {app.missing_skills && (
+                              <span>Missing: <span className="text-rose-500 font-semibold normal-case">{app.missing_skills}</span></span>
+                            )}
+                          </div>
                           {skillsList.length > 0 && (
                             <div className="flex flex-wrap gap-1">
                               {skillsList.map((skill: string) => (

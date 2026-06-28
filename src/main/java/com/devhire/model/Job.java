@@ -50,9 +50,10 @@ public class Job {
     @JsonIgnore
     private String salaryRange;
 
-    @Column(name = "posted_date", insertable = false, updatable = false)
+    @Column(name = "posted_date")
     @JsonProperty("posted_date")
-    private LocalDateTime postedDate;
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime postedDate = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
     @Column

@@ -335,7 +335,19 @@ function DashboardSeeker() {
                           <tr key={app.id} className="hover:bg-white/50 transition-colors group cursor-pointer" onClick={() => navigate(`/jobs/${app.job_id || app.jobId}`)}>
                             <td className="px-6 py-5">
                               <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{app.job_title || 'Software Role'}</p>
-                              <p className="text-sm font-medium text-slate-500">Applied: {new Date(app.applied_date || app.appliedDate).toLocaleDateString()}</p>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs">
+                                <span className="text-slate-500 font-medium">Applied: {new Date(app.applied_date || app.appliedDate).toLocaleDateString()}</span>
+                                {app.matched_skills && (
+                                  <span className="text-emerald-600 font-semibold">
+                                    ✓ {app.matched_skills}
+                                  </span>
+                                )}
+                                {app.missing_skills && (
+                                  <span className="text-rose-500 font-semibold">
+                                    ✗ {app.missing_skills}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-5 text-center">
                               <span className={`px-2.5 py-1 text-xs font-mono font-bold rounded-lg border ${

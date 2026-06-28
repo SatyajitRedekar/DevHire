@@ -20,9 +20,9 @@ public class Application {
     @JoinColumn(name = "seeker_id", nullable = false)
     private User seeker;
 
-    @Column(name = "applied_date", insertable = false, updatable = false)
+    @Column(name = "applied_date")
     @JsonProperty("applied_date")
-    private LocalDateTime appliedDate;
+    private LocalDateTime appliedDate = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
     @Column

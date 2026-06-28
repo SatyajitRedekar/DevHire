@@ -185,21 +185,68 @@ public class ApplicationService {
             resp.setSkills(profile.getSkills());
             resp.setExperienceYears(profile.getExperienceYears());
 
-            int matchScore = calculateMatchScore(app.getJob().getSkillsRequired(), profile.getSkills());
-            resp.setMatchScore(matchScore);
+            populateSkillsAnalysis(resp, app.getJob().getSkillsRequired(), profile.getSkills());
         } else {
             resp.setMatchScore(0);
+            resp.setMatchedSkills("");
+            resp.setMissingSkills(app.getJob().getSkillsRequired() != null ? app.getJob().getSkillsRequired() : "");
         }
 
         return resp;
     }
 
-    private int calculateMatchScore(String jobSkillsRequired, String seekerSkills) {
+    private void populateSkillsAnalysis(ApplicationResponse resp, String jobSkillsRequired, String seekerSkills) {
         if (jobSkillsRequired == null || jobSkillsRequired.trim().isEmpty()) {
-            return 100; // No requirements means 100% match
+            resp.setMatchScore(100);
+            resp.setMatchedSkills("None required");
+            resp.setMissingSkills("");
+            return;
         }
         if (seekerSkills == null || seekerSkills.trim().isEmpty()) {
-            return 0; // Require skills but candidate has none
+            resp.setMatchScore(0);
+            resp.setMatchedSkills("");
+            resp.setMissingSkills(jobSkillsRequired);
+            return;
+        }
+
+        List<String> requiredList = Arrays.stream(jobSkillsRequired.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+
+        List<String> seekerList = Arrays.stream(seekerSkills.split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
+
+        List<String> matched = new ArrayList<>();
+        List<String> missing = new ArrayList<>();
+
+        for (String req : requiredList) {
+            if (seekerList.contains(req.toLowerCase())) {
+                matched.add(req);
+            } else {
+                missing.add(req);
+            }
+        }
+
+        resp.setMatchedSkills(String.join(", ", matched));
+        resp.setMissingSkills(String.join(", ", missing));
+
+        if (requiredList.isEmpty()) {
+            resp.setMatchScore(100);
+        } else {
+            int score = (int) Math.round((double) matched.size() / requiredList.size() * 100);
+            resp.setMatchScore(score);
+        }
+    }
+
+    private int calculateMatchScore(String jobSkillsRequired, String seekerSkills) {
+        if (jobSkillsRequired == null || jobSkillsRequired.trim().isEmpty()) {
+            return 100;
+        }
+        if (seekerSkills == null || seekerSkills.trim().isEmpty()) {
+            return 0;
         }
 
         List<String> requiredList = Arrays.stream(jobSkillsRequired.split(","))
