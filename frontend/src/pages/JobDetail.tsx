@@ -126,7 +126,7 @@ function JobDetail() {
         <div className="flex-1 flex flex-col gap-8 animate-fade-in-up animation-delay-2000">
 
           {/* Quick Stats */}
-          <div className="glass bg-white/80 rounded-3xl p-8 border border-white/60 shadow-xl flex flex-wrap gap-8 justify-around items-center divide-x divide-slate-200/50">
+          <div className="bg-white rounded-3xl p-8 border border-slate-200/60 shadow-lg flex flex-wrap gap-8 justify-around items-center divide-x divide-slate-200/50">
             <div className="px-4 text-center">
               <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Experience</p>
               <p className="text-xl font-bold text-slate-800">{job.experience}</p>
