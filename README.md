@@ -6,8 +6,8 @@
 
 ## Tech Stack
 
-- **Backend:** Java 21, Spring Boot, Hibernate ORM, JPA, Jakarta Servlet Filter
-- **Security:** JWT (JSON Web Tokens) Authentication, custom Secure Password Hashing (SHA-256)
+- **Backend:** Java 21, Spring Boot, Spring Security, Hibernate ORM, JPA
+- **Security:** JWT (JSON Web Tokens) Authentication, Spring Security BCrypt Password Encoding
 - **Database:** MySQL 8.0, custom relational constraints (`ON DELETE CASCADE`)
 - **Frontend:** React 19, TypeScript, Vite, Vanilla CSS (harmonious HSL custom dark/light palettes)
 
@@ -18,7 +18,7 @@
 - **Double-Sided User Roles:** Distinct features and dashboards for **Candidates (Seekers)** and **Recruiters**.
 - **Interactive Job Search:** Search jobs by keywords, locations, or key technical skill tags.
 - **Secure Authentication:** JWT-based stateless authentication protecting developer profile states.
-- **JWT Servlet Filter Interceptor:** Intercepts request headers to automatically validate authorization states on protected resources.
+- **Spring Security & JWT Filter:** Integrates custom JWT validation into the Spring Security filter chain to automatically validate authorization states on protected resources.
 - **Recruiter Workflows:** Create, edit, publish job listings, and review incoming candidate cover notes and profile information.
 - **Seeker Workflows:** Review job requirements, apply to open roles, and track application history states (`APPLIED`, `SHORTLISTED`, `REJECTED`, `HIRED`).
 - **Responsive Premium Design:** Sleek modern typography, smooth micro-animations, glassmorphism overlays, and harmony styling.
@@ -30,7 +30,7 @@
 ```mermaid
 sequenceDiagram
     participant Seeker as Candidate (Vite App)
-    participant Filter as JWT Servlet Filter
+    participant Filter as Spring Security Filter Chain
     participant Controller as REST Controller
     participant DB as MySQL Database
 
@@ -42,7 +42,7 @@ sequenceDiagram
         DB-->>Controller: Return query records
         Controller-->>Seeker: 201 Created (Application Details)
     else Token is invalid or missing
-        Filter-->>Seeker: 401 Unauthorized (Access Denied)
+        Filter-->>Seeker: 401/403 Access Denied
     end
 ```
 

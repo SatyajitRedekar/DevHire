@@ -11,6 +11,9 @@ function JobDetail() {
   const [alreadyApplied, setAlreadyApplied] = useState(false)
   const [similarJobs, setSimilarJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showApplyModal, setShowApplyModal] = useState(false)
+  const [coverNote, setCoverNote] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -47,17 +50,24 @@ function JobDetail() {
     }
 
     if (alreadyApplied) return
+    setShowApplyModal(true)
+  }
 
+  async function handleApplyConfirm() {
+    setSubmitting(true)
     try {
       await api.post('/applications', {
         user_id: currentUser.id,
         job_id: job.id,
-        status: 'APPLIED'
+        cover_note: coverNote
       })
+      setShowApplyModal(false)
       navigate('/dashboard/seeker')
     } catch (err) {
       console.error('Failed to apply', err)
       alert('Failed to apply. You may have already applied.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -255,6 +265,46 @@ function JobDetail() {
         </div>
 
       </div>
+
+      {showApplyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-2xl w-full max-w-lg p-8 mx-4 animate-scale-up">
+            <h3 className="text-2xl font-extrabold font-heading text-slate-900 mb-2">Apply for {job.title}</h3>
+            <p className="text-slate-500 font-medium text-sm mb-6">at {job.company}</p>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                Introduce Yourself (Optional Cover Note)
+              </label>
+              <textarea
+                value={coverNote}
+                onChange={(e) => setCoverNote(e.target.value)}
+                placeholder="Share your experience, why you're a great fit, and when you can start..."
+                rows={5}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-medium resize-none"
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowApplyModal(false)}
+                disabled={submitting}
+                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApplyConfirm}
+                disabled={submitting}
+                className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 hover:shadow-blue-500/35 transition-all flex items-center justify-center gap-2"
+              >
+                {submitting ? 'Submitting...' : 'Submit Application'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
